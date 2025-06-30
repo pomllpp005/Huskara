@@ -2,12 +2,13 @@
 // USER PARAMETERS
 // =====================
 #include <POP32.h>
-#define KP 0.04
-#define KD 0.6
-#define SPEED 60
+#define KP 0.011
+#define KD 0.2
+#define SPEED 65
 #define RUN_TIME_MS 6000
-#define MAX_OUT_TIME_MS 500
-#define SENSOR_THRESHOLD_PERCENT 75
+#define MAX_OUT_TIME_MS 10
+#define SENSOR_THRESHOLD_PERCENT 50
+
 #define CALIBRATION_AVG_SAMPLES 8
 #define CALIBRATION_COLLECTOR_SAMPLES 10
 
@@ -32,8 +33,8 @@
 // GLOBAL VARIABLES
 // =====================
 int sensorValues[NUM_SENSORS];
-unsigned int maxSensorValues[NUM_SENSORS];
-unsigned int minSensorValues[NUM_SENSORS];
+unsigned int maxSensorValues[NUM_SENSORS]={3273,	3316,	3323,	3005,	3163,	2918,	3204,	2903	,2362,	2741,	3271,	3087,	3233,	3093,	2982,	1520	};
+unsigned int minSensorValues[NUM_SENSORS]={235,	233,	231,	223,	219,	212,	225,	217,	216,	218,	229,	225,	238,	228,	221,	208};
 int sensorThreshold[NUM_SENSORS];
 
 bool isOnLine = false;
@@ -63,13 +64,16 @@ Serial.begin(9600);
   }
 
   // รอปุ่มกดเริ่มวิ่ง
- 
-  
+ waitSW_OK();
+   
+   AO();
+
 }
 void loop(){
- Readcalibreate();
- delay(100);
-
+ //Readcalibreate();
+// readSerialRawSensors();
+//  delay(100);
+robotRun();
 }
 
 // =====================
@@ -112,23 +116,20 @@ void robotRun() {
         break;
       }
       if (!lastDetectedSide) {
-        motor(1, -100);
+        motor(1, -90);
         motor(2, 100);
       } else {
         motor(1, 100);
-        motor(2, -100);
+        motor(2, -90);
       }
     }
 
-    if (currentTime - startTime >= RUN_TIME_MS) {
-      running = false;
-      break;
-    }
+    // if (currentTime - startTime >= RUN_TIME_MS) {
+    //   running = false;
+    //   break;
+    // }
   }
 
-  // หยุดมอเตอร์
-  motor(1, 0);
-  motor(2, 0);
  
 }
 
@@ -149,6 +150,16 @@ void readRawSensors() {
     sensorValues[i] = analogRead(PIN_MUX_SIG);
   }
 }
+void readSerialRawSensors() {
+  for (uint8_t i = 0; i < NUM_SENSORS; i++) {
+    selectMuxChannel(i);
+    delayMicroseconds(5);
+    sensorValues[i] = analogRead(PIN_MUX_SIG);
+     Serial.print(sensorValues[i]);
+    Serial.print("\t");
+  }
+  Serial.println();
+}
 void Readcalibreate(){
   readCalibratedSensors();
   for(uint8_t i = 0; i < NUM_SENSORS; i++){
@@ -165,9 +176,9 @@ void readCalibratedSensors() {
     unsigned int range = maxSensorValues[i] - sensorThreshold[i];
     if (sensorValues[i] > sensorThreshold[i]) {
       if (sensorValues[i] < maxSensorValues[i]) {
-        sensorValues[i] = ((sensorValues[i] - sensorThreshold[i]) * 255) / range;
+        sensorValues[i] = ((sensorValues[i] - sensorThreshold[i]) * 1000) / range;
       } else {
-        sensorValues[i] = 255;
+        sensorValues[i] = 1000;
       }
     } else {
       sensorValues[i] = 0;
@@ -196,8 +207,8 @@ unsigned int readLine() {
 
 void calibrateSensors() {
   for (byte i = 0; i < NUM_SENSORS; i++) {
-    maxSensorValues[i] = 0;
-    minSensorValues[i] = 4095;
+    maxSensorValues[i] = maxSensorValues[i]-50;
+    minSensorValues[i] = minSensorValues[i]+50;
   }
 
   for (byte j = 0; j < CALIBRATION_COLLECTOR_SAMPLES; j++) {
