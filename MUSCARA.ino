@@ -41,6 +41,7 @@ bool isOnLine = false;
 bool lastDetectedSide = false;
 int previousError = 0;
 
+bool LineBW = true;   //white = true ;  black = false ;
 // =====================
 // SETUP
 // =====================
@@ -193,6 +194,11 @@ unsigned int readLine() {
   isOnLine = false;
 
   readCalibratedSensors();
+  if(LineBW){
+    for (byte i = 0; i < NUM_SENSORS; i++) {
+      sensorValues[i] = 1000-sensorValues[i];
+    }
+  }
 
   for (byte i = 0; i < NUM_SENSORS; i++) {
     if (sensorValues[i]) {
